@@ -1,0 +1,11 @@
+
+MAXCLIENTES=5
+export MAXCLIENTES
+echo MAXCLIENTES
+
+MAXMEDICOS=3
+export MAXMEDICOS
+echo MAXMEDICOS
+
+make balcao
+./balcao
