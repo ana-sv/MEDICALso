@@ -12,12 +12,31 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-typedef struct {
+
+typedef struct Mensagem
+{
+    int forPID;
+    int ToPID;
+    char msg[1000];
+} msg ;
+
+typedef struct Utente {
     char nome[30];
     char especialidade[10];
     int prioridade;
     int pid;
-}cliente;
+    msg mUtente;
+} u;
+
+typedef struct Especialista
+{
+    char nome[30];
+    char especialidade[10];
+    int pid;
+    msg mEspecialista;
+} e ;
+
+
 
 
 void running();
