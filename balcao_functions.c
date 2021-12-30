@@ -1,6 +1,5 @@
 #include "balcao_utils.h"
 
-
 int maxclientes;
 int maxmedicos;
 
@@ -9,6 +8,10 @@ int stopRunning = 0;
 // Comunicacao com classificador
 int fd_in[2], fd_out[2];
 
+//Comuicação com Clientes 
+
+
+//Comunicao com Medicos
 
 
 void running()
@@ -19,34 +22,88 @@ void running()
         return;
     }
 
-    char str[100];
-
-
-
     while (!stopRunning)
     {
 
-  
-        /// comandos vao aqui 
-
-
         //////// Só para a Meta 1
+        /*
+        char str[100];
+
         printf("Insira os sintomas que apresenta: ");
         fgets(str, sizeof(str) - 1, stdin);
 
         if (strcmp(str, "encerra\n") == 0)
         {
-            stopRunning=1;
+            stopRunning = 1;
             return;
-        
         }
-       
-        classifica(str);
 
+        classifica(str);
+        */
+
+        // Meta 2
+
+        char cmd[100];
+        char str1[49], str2[49];
+
+        // recebe comando e "corta-o pelo espaço "
+
+
+
+        if (strcmp(str1, "encerra") == 0)
+        {
+            stopRunning = 1;
+            return;
+        }
+        if (strcmp(str1, "utentes") == 0)
+        {
+            // lista de utentes em espera e os atendidos, indicando especialidade e prioridade
+            printf("Não implementado");
+        }
+        if (strcmp(str1, "especialistas") == 0)
+        {
+            // lista dos especialistas ligados, em consulta ou nao e a sua especialidade 
+            printf("Não implementado");
+        }
+        if (strcmp(str1, "delut") == 0)
+        {
+            // remover um utente em espera e informando-o disso 
+            printf("Não implementado");
+        }
+        if (strcmp(str1, "delesp") == 0)
+        {
+            // remover um especialista que nao esteja em consulta e informando-o disso 
+            printf("Não implementado");
+        }
+        if (strcmp(str1, "freq") == 0)
+        {
+            // apresenta as filas de espera, atualizado de N em N segundos
+            printf("Não implementado");
+        }
 
     }
 
+
+
+
+
+
+
 }
+
+
+
+int configCliente(){
+    //usamos named pipes
+
+
+
+
+
+}
+
+
+
 
 void classifica(char str[100])
 {
@@ -129,12 +186,20 @@ void environmentVariables()
 
 void shutdown()
 {
-    fprintf(stdout, "O balcao vai encerrar! \n ");
-    // enviar sinal aos clientes/medicos para terminarem ??!?
+    fprintf(stdout, "O balcao vai encerrar... \n ");
+
+    // encerra o classificador
+    classifica("#fim");
+
+    // envia sinal para todos os clientes encerrarem
+
+    // envia sinal para todos os especialistas encerrarem
 }
 
 int isAlreadyRunning()
 {
+    // se consegue detetar um pipe aberto, termina
+
     // if( access(      )
     //    fprintf(stderr, "BALCAO ALREADY RUNNING" ");
     return 1;
