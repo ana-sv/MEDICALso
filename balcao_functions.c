@@ -16,6 +16,11 @@ int fd_in[2], fd_out[2];
 
 void running()
 {
+    // thread a fazer a recolha dos medico e utentes ligados idk 
+    // e a receber o aviso/alarme que os medicos x y x ainda continuam ligados ?!
+    // vai atualizando uma lista 
+
+
     if (configClassificador() == 1)
     {
         shutdown();
@@ -25,29 +30,10 @@ void running()
     while (!stopRunning)
     {
 
-        //////// Só para a Meta 1
-        /*
-        char str[100];
-
-        printf("Insira os sintomas que apresenta: ");
-        fgets(str, sizeof(str) - 1, stdin);
-
-        if (strcmp(str, "encerra\n") == 0)
-        {
-            stopRunning = 1;
-            return;
-        }
-
-        classifica(str);
-        */
-
-        // Meta 2
-
         char cmd[100];
         char str1[49], str2[49];
 
-        // recebe comando e "corta-o pelo espaço "
-
+        // recebe comando e "corta-o" pelo espaço
 
 
         if (strcmp(str1, "encerra") == 0)
@@ -95,6 +81,7 @@ void running()
 
 int configCliente(){
     //usamos named pipes
+    // bloqueantes idk
 
 
 
@@ -104,7 +91,7 @@ int configCliente(){
 
 
 
-
+// NAO MEXE
 void classifica(char str[100])
 {
 
@@ -126,6 +113,8 @@ void classifica(char str[100])
     fprintf(stdout, "%s", str_temp);
 }
 
+
+// NAO MEXE
 int configClassificador()
 {
 
@@ -160,6 +149,7 @@ int configClassificador()
     }
     return 0;
 }
+
 
 void showEnvironmentVariables()
 {

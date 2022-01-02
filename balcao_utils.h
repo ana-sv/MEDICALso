@@ -23,18 +23,19 @@ typedef struct Mensagem
 typedef struct Utente {
     char nome[30];
     char especialidade[10];
+    char sintomas[100];
     int prioridade;
     int pid;
-    msg mUtente;
-} u;
+    msg msgUtente;
+} utente;
 
 typedef struct Especialista
 {
     char nome[30];
     char especialidade[10];
     int pid;
-    msg mEspecialista;
-} e ;
+    msg msgEspecialista;
+} especialista ;
 
 
 
