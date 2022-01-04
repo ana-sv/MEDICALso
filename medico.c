@@ -1,4 +1,4 @@
-#include "medico_utils.h"
+#include "utils.h"
 
  #define NOMES 30
  #define SINTOMAS 100

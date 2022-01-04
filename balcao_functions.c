@@ -1,4 +1,4 @@
-#include "balcao_utils.h"
+#include "utils.h"
 
 int maxclientes;
 int maxmedicos;

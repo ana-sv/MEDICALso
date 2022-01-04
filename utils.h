@@ -1,5 +1,4 @@
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +11,10 @@
 #include <sys/wait.h>
 #include <signal.h>
 
+#define FIFO_CLIENTE "/tmp/fifo%d"
+
+#define FIFO_BALCAO "/tmp/fifoBalcao"
+
 
 typedef struct Mensagem
 {
@@ -22,11 +25,11 @@ typedef struct Mensagem
 
 typedef struct Utente {
     char nome[30];
+    int pid;
     char especialidade[10];
     char sintomas[100];
     int prioridade;
-    int pid;
-    msg msgUtente;
+    int lugarFila;
 } utente;
 
 typedef struct Especialista
@@ -34,12 +37,13 @@ typedef struct Especialista
     char nome[30];
     char especialidade[10];
     int pid;
-    msg msgEspecialista;
 } especialista ;
 
 
 
 
+
+// Funções Balcao
 void running();
 void classifica();
 int configClassificador(); 
@@ -53,3 +57,10 @@ int begin();
 
 
 
+// Funções Medico 
+
+
+
+
+
+// Funções Cliente
