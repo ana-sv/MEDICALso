@@ -11,7 +11,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#define FIFO_CLIENTE "/tmp/fifo%d"
+#define FIFO_CLIENTE "/tmp/fifoCliente%d"
+#define FIFO_MEDICO "/tmp/fifoMedico%d"
 
 #define FIFO_BALCAO "/tmp/fifoBalcao"
 

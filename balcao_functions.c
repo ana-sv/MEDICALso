@@ -5,21 +5,62 @@ int maxmedicos;
 
 int stopRunning = 0;
 
+int fd_balcao;
+
 // Comunicacao com classificador
 int fd_in[2], fd_out[2];
 
-//Comuicação com Clientes 
 
+//Comunicação com Clientes
+int fd_cliente;
+char fifoCliente[25];
 
 //Comunicao com Medicos
 
 
+
+void configFIFObalcao(){
+
+    if(mkfifo(FIFO_BALCAO,0777) == -1 ){
+        perror( "FIFO BALCAO ");
+        unlink(FIFO_BALCAO);
+        exit(1);
+    }
+    fprintf(stderr,"\n %s criado com sucesso!\n", FIFO_BALCAO);
+
+}
+
+
+
+
+// abre fifo balcao read+write
+void openFIFObalcao()
+{
+    fd_balcao = open(FIFO_BALCAO, O_RDWR);
+    if (fd_balcao == -1)
+    {
+        fprintf(stderr, "ERRO AO ABRIR FIFO BALCAO ");
+        exit(1);
+    }
+    fprintf(stderr, "\n Fifo balcao aberto com sucesso !\n", fifoCliente);
+}
+
+
+
+void openFIFOcliente( ){
+
+     fd_cliente = open(fifoCliente, O_WRONLY);
+        if( fd_cliente == -1 ){
+        fprintf(stderr, "ABRIR FIFO CLIENTE ");
+        close(fd_balcao);
+        unlink(FIFO_CLIENTE);
+        exit(1);
+    }
+
+}
+
 void running()
 {
-    // thread a fazer a recolha dos medico e utentes ligados idk 
-    // e a receber o aviso/alarme que os medicos x y x ainda continuam ligados ?!
-    // vai atualizando uma lista 
-
 
     if (configClassificador() == 1)
     {
@@ -32,12 +73,42 @@ void running()
 
         char cmd[100];
         char str1[49], str2[49];
+        int verify = 0;
+        utente u;
 
         // recebe comando e "corta-o" pelo espaço
+
+        // thread a fazer a recolha dos medico e utentes ligados idk
+
+        // e a receber o aviso/alarme que os medicos x y x ainda continuam ligados ?!
+        // vai atualizando uma lista
+
+        // para modificar
+        // agora só esta assim para testar
+        configFIFObalcao();
+        openFIFObalcao();
+
+        verify = read(fd_balcao, &u, sizeof(utente));
+        if (verify != sizeof(utente))
+        {
+            perror("ERRO NA LEITURA");
+            shutdown();
+        }
+        sprintf(fifoCliente,FIFO_CLIENTE,u.pid );
+
+        fprintf(stdout, " leu utente %s", u.nome );
+        u.prioridade = 33;
+        strcpy( u.especialidade,"Dermatologia");
+        printf("%s %d %c", u.nome, u.pid, u.especialidade);
+        
+        openFIFOcliente();
+        write(fd_cliente, &u, sizeof(utente));
+
 
 
         if (strcmp(str1, "encerra") == 0)
         {
+            shutdown();
             stopRunning = 1;
             return;
         }
@@ -48,17 +119,17 @@ void running()
         }
         if (strcmp(str1, "especialistas") == 0)
         {
-            // lista dos especialistas ligados, em consulta ou nao e a sua especialidade 
+            // lista dos especialistas ligados, em consulta ou nao e a sua especialidade
             printf("Não implementado");
         }
         if (strcmp(str1, "delut") == 0)
         {
-            // remover um utente em espera e informando-o disso 
+            // remover um utente em espera e informando-o disso
             printf("Não implementado");
         }
         if (strcmp(str1, "delesp") == 0)
         {
-            // remover um especialista que nao esteja em consulta e informando-o disso 
+            // remover um especialista que nao esteja em consulta e informando-o disso
             printf("Não implementado");
         }
         if (strcmp(str1, "freq") == 0)
@@ -66,27 +137,7 @@ void running()
             // apresenta as filas de espera, atualizado de N em N segundos
             printf("Não implementado");
         }
-
     }
-
-
-
-
-
-
-
-}
-
-
-
-int configCliente(){
-    //usamos named pipes
-    // bloqueantes idk
-
-
-
-
-
 }
 
 
@@ -112,7 +163,6 @@ void classifica(char str[100])
 
     fprintf(stdout, "%s", str_temp);
 }
-
 
 // NAO MEXE
 int configClassificador()
@@ -150,7 +200,6 @@ int configClassificador()
     return 0;
 }
 
-
 void showEnvironmentVariables()
 {
     printf("\nMAXCLIENTES: %d", maxclientes);
@@ -184,6 +233,7 @@ void shutdown()
     // envia sinal para todos os clientes encerrarem
 
     // envia sinal para todos os especialistas encerrarem
+
 }
 
 int isAlreadyRunning()
