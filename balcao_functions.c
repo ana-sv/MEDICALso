@@ -6,112 +6,154 @@ int maxmedicos;
 int stopRunning = 0;
 
 int fd_balcao;
+int fd_lixo;
 
 // Comunicacao com classificador
 int fd_in[2], fd_out[2];
-
 
 //Comunicação com Clientes
 int fd_cliente;
 char fifoCliente[25];
 
 //Comunicao com Medicos
+int fd_medico;
+char fifoMedico[25];
 
 
+utente *listaUtentes;
+especialista *listaMedicos;
 
-void configFIFObalcao(){
-
-    if(mkfifo(FIFO_BALCAO,0777) == -1 ){
-        perror( "FIFO BALCAO ");
-        unlink(FIFO_BALCAO);
-        exit(1);
-    }
-    fprintf(stderr,"\n %s criado com sucesso!\n", FIFO_BALCAO);
-
-}
+typedef struct dados_pipes{
+    char nomePipe[25];
+    int fd;
+    int cancel;
+}TDados;
 
 
-
-
-// abre fifo balcao read+write
-void openFIFObalcao()
+utente classifica( utente u )
 {
-    fd_balcao = open(FIFO_BALCAO, O_RDWR);
-    if (fd_balcao == -1)
+
+    char str_temp[100];
+    int readAux = 0;
+
+    // envia ao classificador
+    write(fd_in[1], u.sintomas, strlen(u.sintomas));
+
+    // recebe do classificador
+    readAux = read(fd_out[0], str_temp, sizeof(str_temp) - 1);
+    if (readAux == -1)
     {
-        fprintf(stderr, "ERRO AO ABRIR FIFO BALCAO ");
+        fprintf(stderr, "READ FROM CLASSIFICADOR");
         exit(1);
     }
-    fprintf(stderr, "\n Fifo balcao aberto com sucesso !\n", fifoCliente);
+    str_temp[readAux] = '\0';
+
+    fprintf(stdout, "%s", str_temp);
+
+
+    // u.especialidade = ??
+    // u.prioridade == ?? 
+
+
+    return u;
+}
+
+
+void addClient(utente u){
+
+
+
+}
+
+void addTOline(){  // mete o utente em fila de espera dependendo da sua prioridade; 
+    // só organiza porque o lugar na lita de espera está na stuct de cada um ?? 
+    // ou será melhor fazer uma lista ligada de clientes e ordena-la ?
+
 }
 
 
 
-void openFIFOcliente( ){
+void * trataPipesClientes( void * arg){
+    TDados *as = (TDados * )arg;
+    int n;
+    char str[50];
+    utente u;
+    utente uAtualizado; 
 
-     fd_cliente = open(fifoCliente, O_WRONLY);
-        if( fd_cliente == -1 ){
-        fprintf(stderr, "ABRIR FIFO CLIENTE ");
-        close(fd_balcao);
-        unlink(FIFO_CLIENTE);
-        exit(1);
+    while( !as->cancel ){
+        if( ( n = read(as->fd, &u , sizeof(utente) ) == -1))
+            perror("ERRO ao ler do pipe cliente");
+
+        printf("\n[CLIENTE] %s os sintomas: %s", u.nome, u.sintomas);
+        uAtualizado = classifica(u);
+        addClient(uAtualizado);
+        addTOline(uAtualizado);
     }
 
+    return NULL; 
 }
+
+
 
 void running()
 {
+    char str1[50];
+    pthread_t threadClientes, threadMedicos;
+    TDados tdadosClientes, tdadosMedicos;
+    int res;
 
     if (configClassificador() == 1)
     {
         shutdown();
         return;
     }
+    
+    if( mkfifo(FIFO_BALCAO, 00777)==-1 )
+        perror("\nErro ao abrir o FIFO_CLIENTE");
 
-    while (!stopRunning)
-    {
+   
+    fd_cliente = open(FIFO_CLIENTE,O_RDWR);
+    if(fd_cliente == -1 )
+        perror("\nErro ao abrir o FIFO_CLIENTE");
 
-        char cmd[100];
-        char str1[49], str2[49];
-        int verify = 0;
-        utente u;
+    fd_medico = open(FIFO_MEDICO, O_RDWR);
+    if(fd_medico == -1 )
+        perror("\nErro ao abrir o FIFO_CLIENTE");
 
-        // recebe comando e "corta-o" pelo espaço
 
-        // thread a fazer a recolha dos medico e utentes ligados idk
-
-        // e a receber o aviso/alarme que os medicos x y x ainda continuam ligados ?!
-        // vai atualizando uma lista
-
-        // para modificar
-        // agora só esta assim para testar
-        configFIFObalcao();
-        openFIFObalcao();
-
-        verify = read(fd_balcao, &u, sizeof(utente));
-        if (verify != sizeof(utente))
-        {
-            perror("ERRO NA LEITURA");
-            shutdown();
-        }
-        sprintf(fifoCliente,FIFO_CLIENTE,u.pid );
-
-        fprintf(stdout, " leu utente %s", u.nome );
-        u.prioridade = 33;
-        strcpy( u.especialidade,"Dermatologia");
-        printf("%s %d %c", u.nome, u.pid, u.especialidade);
-        
-        openFIFOcliente();
-        write(fd_cliente, &u, sizeof(utente));
+    //lança thread que espera clientes
+    tdadosClientes.fd = fd_cliente;
+    strcpy(tdadosClientes.nomePipe, FIFO_CLIENTE );
+    tdadosClientes.cancel = 0;
+    res = pthread_create( &threadClientes,NULL, &trataPipesClientes,&tdadosClientes);
+    if (res == 0 )
+       perror("\nERRO ao criar pthread para recolher clientes ");
 
 
 
-        if (strcmp(str1, "encerra") == 0)
-        {
-            shutdown();
-            stopRunning = 1;
-            return;
-        }
+    //lança thread que espera especialistas 
+
+
+
+
+    // Termina de recolher cliente e medicos , cancela as threads
+    tdadosClientes.cancel = 1; //pede à thread para sair 
+    pthread_join(threadClientes,NULL); // espera que a thread acabe 
+
+
+
+
+    // thread para fazer os pares cliente-medico 
+                // 
+    
+
+
+
+
+
+    do{
+
+
         if (strcmp(str1, "utentes") == 0)
         {
             // lista de utentes em espera e os atendidos, indicando especialidade e prioridade
@@ -137,32 +179,18 @@ void running()
             // apresenta as filas de espera, atualizado de N em N segundos
             printf("Não implementado");
         }
-    }
+
+
+    }while( strcmp(str1, "encerra") != 0);
+
+    shutdown();
+    
 }
 
 
 
-// NAO MEXE
-void classifica(char str[100])
-{
 
-    char str_temp[100];
-    int readAux = 0;
 
-    // envia ao classificador
-    write(fd_in[1], str, strlen(str));
-
-    // recebe do classificador
-    readAux = read(fd_out[0], str_temp, sizeof(str_temp) - 1);
-    if (readAux == -1)
-    {
-        fprintf(stderr, "READ FROM CLASSIFICADOR");
-        return;
-    }
-    str_temp[readAux] = '\0';
-
-    fprintf(stdout, "%s", str_temp);
-}
 
 // NAO MEXE
 int configClassificador()
@@ -197,6 +225,7 @@ int configClassificador()
         close(fd_out[1]);
         break;
     }
+
     return 0;
 }
 
@@ -223,17 +252,24 @@ void environmentVariables()
     }
 }
 
+
+
+
+
 void shutdown()
 {
     fprintf(stdout, "O balcao vai encerrar... \n ");
 
     // encerra o classificador
-    classifica("#fim");
+    utente u; 
+    strcpy(u.sintomas,"#fim");
+    classifica(u);
+
+    // unlink pipes
 
     // envia sinal para todos os clientes encerrarem
 
     // envia sinal para todos os especialistas encerrarem
-
 }
 
 int isAlreadyRunning()

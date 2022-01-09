@@ -10,11 +10,12 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <sys/select.h>
 
-#define FIFO_CLIENTE "/tmp/fifoCliente%d"
-#define FIFO_MEDICO "/tmp/fifoMedico%d"
+#define FIFO_CLIENTE "fifoCliente%d"
+#define FIFO_MEDICO "fifoMedico%d"
 
-#define FIFO_BALCAO "/tmp/fifoBalcao"
+#define FIFO_BALCAO "fifoBalcao"
 
 
 typedef struct Mensagem
@@ -29,8 +30,8 @@ typedef struct Utente {
     int pid;
     char especialidade[10];
     char sintomas[100];
-    int prioridade;
-    int lugarFila;
+    int prioridade; 
+    int lugarFila;  // se 0 , está em consulta
 } utente;
 
 typedef struct Especialista
@@ -38,6 +39,8 @@ typedef struct Especialista
     char nome[30];
     char especialidade[10];
     int pid;
+    int emConsulta; 
+
 } especialista ;
 
 
@@ -46,7 +49,7 @@ typedef struct Especialista
 
 // Funções Balcao
 void running();
-void classifica();
+utente classifica();
 int configClassificador(); 
 
 void environmentVariables();

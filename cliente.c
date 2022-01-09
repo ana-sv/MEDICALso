@@ -21,16 +21,6 @@ void configFIFOcliente(){
 
 }
 
-//abrir o fifo do servidor para escrita 
-void openFIFObalcao(){
-    fd_balcao = open(FIFO_BALCAO, O_WRONLY );
-    if( fd_balcao == -1 ){
-        fprintf(stderr, "FIFO BALCAO ");
-        fprintf(stderr, "BALCAO NAO ESTA' EM FUNCIONAMENTO ");
-        exit(1);
-    }
-    fprintf(stderr,"\n Fifo balcao aberto com sucesso !\n", fifoCliente );
-}
 
 // abrir fifo cliente read+write
 void openFIFOcliente(){
@@ -59,7 +49,7 @@ int main(int argc, char **argv)
 
     configFIFOcliente();
 
- 
+
     utente u, aux;
     msg sms;
     char str[100];
@@ -71,7 +61,7 @@ int main(int argc, char **argv)
     u.pid = getpid();
     u.prioridade = 0;
     strcpy(u.especialidade,"indefinida");
-  
+    u.lugarFila= -1; // -1 ainda nao colocado , 0 para em consulta
 
     //indica sintomas do utente
 
@@ -80,15 +70,29 @@ int main(int argc, char **argv)
     fflush(stdin);
     fgets(u.sintomas,sizeof(u.sintomas)-1, stdin );
 
-  printf("\nAU\n");
   
-    openFIFObalcao();
+   // openFIFObalcao();
+    fd_balcao = open(FIFO_BALCAO,O_WRONLY);
+    if(fd_balcao == -1 ){
+        perror("\nAbrir fifo balcao");
+        exit(1);
+    }
+
     openFIFOcliente();
 
     // envia nome, pid e sintomas do utente ao balcao
-    write(fd_balcao, &u, sizeof(utente) );
+    write(fd_balcao, &u, sizeof(u) );
     fprintf(stdout,"Informação enviada ao balcao, aguarde... ");
-    verify = read(fd_balcao, &aux, sizeof(utente));
+
+
+    // a proxima info que recebe já deveria ser a do seu par 
+
+
+
+
+    /*
+
+    verify = read(fd_balcao, &aux, sizeof(aux));
     if(verify != sizeof(aux)){
         fprintf(stderr, "\nERRO NA LEITURA");
         exit(1);   
@@ -97,6 +101,7 @@ int main(int argc, char **argv)
     fprintf(stdout,"\nEspecialidade: %s\nPrioridade: %d\nLugar em Fila: %d\n", u.especialidade,u.prioridade, u.lugarFila);
     fprintf(stdout,"Aguarde ser atendido.... ");
 
+    */
 
 
 
