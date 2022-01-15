@@ -11,7 +11,7 @@ balcao_functions.o : balcao_functions.c
 	gcc balcao_functions.c -c 
 
 balcao: balcao.o balcao_functions.o 
-	gcc balcao.o balcao_functions.o -o balcao
+	gcc balcao.o balcao_functions.o -o balcao -pthread
 
 clean: 
 	-rm -f *.o 

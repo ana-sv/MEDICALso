@@ -11,6 +11,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <sys/select.h>
+#include <pthread.h>
 
 #define FIFO_CLIENTE "fifoCliente%d"
 #define FIFO_MEDICO "fifoMedico%d"
@@ -20,19 +21,21 @@
 
 typedef struct Mensagem
 {
-    int forPID;
-    int ToPID;
+ // ... 
     char msg[1000];
 } msg ;
+
 
 typedef struct Utente {
     char nome[30];
     int pid;
+    char fifoName[30];
     char especialidade[10];
     char sintomas[100];
     int prioridade; 
     int lugarFila;  // se 0 , está em consulta
 } utente;
+
 
 typedef struct Especialista
 {

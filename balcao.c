@@ -9,7 +9,7 @@ int main(int argc, char **argv)
         return 0;
     }
 
-
+    
    running();
 
     return (EXIT_SUCCESS);

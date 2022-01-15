@@ -19,140 +19,94 @@ char fifoCliente[25];
 int fd_medico;
 char fifoMedico[25];
 
-
 utente *listaUtentes;
 especialista *listaMedicos;
 
-typedef struct dados_pipes{
+typedef struct dados_pipes
+{
     char nomePipe[25];
     int fd;
     int cancel;
-}TDados;
+} TDados;
 
-
-utente classifica( utente u )
+void addTOline()
 {
+    printf("\n passou por addTOline !");
+    // adiciona cliente à lista de espera , lista lgada ??
 
-    char str_temp[100];
-    int readAux = 0;
-
-    // envia ao classificador
-    write(fd_in[1], u.sintomas, strlen(u.sintomas));
-
-    // recebe do classificador
-    readAux = read(fd_out[0], str_temp, sizeof(str_temp) - 1);
-    if (readAux == -1)
-    {
-        fprintf(stderr, "READ FROM CLASSIFICADOR");
-        exit(1);
-    }
-    str_temp[readAux] = '\0';
-
-    fprintf(stdout, "%s", str_temp);
-
-
-    // u.especialidade = ??
-    // u.prioridade == ?? 
-
-
-    return u;
+    // organiza-a por prioridade
 }
 
-
-void addClient(utente u){
-
-
-
-}
-
-void addTOline(){  // mete o utente em fila de espera dependendo da sua prioridade; 
-    // só organiza porque o lugar na lita de espera está na stuct de cada um ?? 
-    // ou será melhor fazer uma lista ligada de clientes e ordena-la ?
-
-}
-
-
-
-void * trataPipesClientes( void * arg){
-    TDados *as = (TDados * )arg;
+void *recolheClientes(void *arg)
+{
+    TDados *as = (TDados *)arg;
     int n;
     char str[50];
     utente u;
-    utente uAtualizado; 
+    utente uAtualizado;
 
-    while( !as->cancel ){
-        if( ( n = read(as->fd, &u , sizeof(utente) ) == -1))
+    while (!as->cancel)
+    {
+        if ((n = read(fd_balcao, &u, sizeof(utente)) == -1))
             perror("ERRO ao ler do pipe cliente");
 
         printf("\n[CLIENTE] %s os sintomas: %s", u.nome, u.sintomas);
-        uAtualizado = classifica(u);
-        addClient(uAtualizado);
-        addTOline(uAtualizado);
+        u = classifica(u); // classifica retorna a struct cliente já preenchida com prioridade e especialidade
+        addTOline(u);
+
+
+        fd_cliente = open(u.fifoName, O_RDWR);
+        if ((n = write(fd_cliente, &u, sizeof(utente)) == -1))
+            perror("ERRO ao ler do pipe cliente");
+        
+
     }
 
-    return NULL; 
+    return NULL;
 }
-
-
 
 void running()
 {
+    utente listaUtentes[maxclientes];
+    especialista listaEsp[maxmedicos];
     char str1[50];
-    pthread_t threadClientes, threadMedicos;
-    TDados tdadosClientes, tdadosMedicos;
     int res;
+
+    pthread_t th[2];
+    TDados tdadosClientes, tdadosMedicos;
 
     if (configClassificador() == 1)
     {
         shutdown();
-        return;
     }
-    
-    if( mkfifo(FIFO_BALCAO, 00777)==-1 )
-        perror("\nErro ao abrir o FIFO_CLIENTE");
 
-   
-    fd_cliente = open(FIFO_CLIENTE,O_RDWR);
-    if(fd_cliente == -1 )
-        perror("\nErro ao abrir o FIFO_CLIENTE");
+    // cria pipe balcao
+    res = mkfifo(FIFO_BALCAO, 0666);
 
-    fd_medico = open(FIFO_MEDICO, O_RDWR);
-    if(fd_medico == -1 )
-        perror("\nErro ao abrir o FIFO_CLIENTE");
-
+    // abre pipe para leitura
+    fd_balcao = open(FIFO_BALCAO, O_RDWR);
+    if (fd_balcao == -1)
+    {
+        perror("\nAbrir fifo balcao");
+        exit(1);
+    }
 
     //lança thread que espera clientes
-    tdadosClientes.fd = fd_cliente;
-    strcpy(tdadosClientes.nomePipe, FIFO_CLIENTE );
     tdadosClientes.cancel = 0;
-    res = pthread_create( &threadClientes,NULL, &trataPipesClientes,&tdadosClientes);
-    if (res == 0 )
-       perror("\nERRO ao criar pthread para recolher clientes ");
+    pthread_create(&th[0], NULL, &recolheClientes, &tdadosClientes);
 
-
-
-    //lança thread que espera especialistas 
-
-
-
+    //lança thread que espera especialistas
 
     // Termina de recolher cliente e medicos , cancela as threads
-    tdadosClientes.cancel = 1; //pede à thread para sair 
-    pthread_join(threadClientes,NULL); // espera que a thread acabe 
+    //   tdadosClientes.cancel = 1; //pede à thread para sair
+    // pthread_join(th[0],NULL); // espera que a thread acabe
 
 
 
-
-    // thread para fazer os pares cliente-medico 
-                // 
-    
-
-
-
-
-
-    do{
-
+    do
+    {
+        fprintf(stdout, "\n comando: ");
+        fgets(str1, sizeof(str1) - 1, stdin);
 
         if (strcmp(str1, "utentes") == 0)
         {
@@ -180,11 +134,9 @@ void running()
             printf("Não implementado");
         }
 
-
-    }while( strcmp(str1, "encerra") != 0);
+    } while (strcmp(str1, "encerra") != 0);
 
     shutdown();
-    
 }
 
 
@@ -192,7 +144,67 @@ void running()
 
 
 
-// NAO MEXE
+
+
+
+
+void shutdown()  ///// FALTA 
+{
+    fprintf(stdout, "O balcao vai encerrar... \n ");
+
+    // encerra o classificador
+    utente u;
+    strcpy(u.sintomas, "#fim");
+    classifica(u);
+
+    // unlink pipes
+    close(fd_balcao);
+    unlink(FIFO_BALCAO);
+
+    // envia sinal para todos os clientes encerrarem
+
+    // envia sinal para todos os especialistas encerrarem
+
+}
+
+
+
+
+
+
+// ESTÁ OKAY
+
+utente classifica(utente u)
+{
+
+    char str_temp[100];
+    int readAux = 0;
+
+    // envia ao classificador
+    write(fd_in[1], u.sintomas, strlen(u.sintomas));
+
+    // recebe do classificador
+    readAux = read(fd_out[0], str_temp, sizeof(str_temp) - 1);
+    if (readAux == -1)
+    {
+        fprintf(stderr, "READ FROM CLASSIFICADOR");
+        exit(1);
+    }
+    str_temp[readAux] = '\0';
+
+    fprintf(stdout, "%s", str_temp);
+
+    char *aux;
+    strtok_r(str_temp, " ", &aux);
+
+    u.prioridade = atoi(aux);
+    strcpy(u.especialidade, str_temp);
+
+    printf("\nUtente: %s - %s - [%d]", u.nome, u.especialidade, u.prioridade);
+
+    return u;
+}
+
 int configClassificador()
 {
 
@@ -252,42 +264,23 @@ void environmentVariables()
     }
 }
 
-
-
-
-
-void shutdown()
-{
-    fprintf(stdout, "O balcao vai encerrar... \n ");
-
-    // encerra o classificador
-    utente u; 
-    strcpy(u.sintomas,"#fim");
-    classifica(u);
-
-    // unlink pipes
-
-    // envia sinal para todos os clientes encerrarem
-
-    // envia sinal para todos os especialistas encerrarem
-}
-
 int isAlreadyRunning()
 {
     // se consegue detetar um pipe aberto, termina
-
-    // if( access(      )
-    //    fprintf(stderr, "BALCAO ALREADY RUNNING" ");
-    return 1;
+    if (access(FIFO_BALCAO, F_OK) != -1)
+    {
+        fprintf(stderr, "BALCAO ALREADY RUNNING");
+        return 1;
+    }
+    return 0;
 }
 
 int begin()
 {
 
-    if (!isAlreadyRunning())
+    if (isAlreadyRunning() == 1)
     {
         shutdown();
-        return 1;
     }
 
     environmentVariables();
@@ -295,3 +288,6 @@ int begin()
 
     return 0;
 }
+
+
+
