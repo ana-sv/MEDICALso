@@ -21,7 +21,6 @@ int main(int argc, char **argv)
     }
 
     utente u, aux;
-    msg sms;
     char str[100];
     int pid, verify;
 
@@ -31,7 +30,7 @@ int main(int argc, char **argv)
     u.prioridade = 0;
     strcpy(u.especialidade, "indefinida");
     u.lugarFila = -1;                            // -1 ainda nao colocado , 0 para em consulta
-    sprintf(u.fifoName, FIFO_CLIENTE, getpid()); // nome do fifo deste cliente
+    sprintf(u.fifoNome, FIFO_CLIENTE, getpid()); // nome do fifo deste cliente
 
     //indica sintomas do utente
     fprintf(stdout, "[ UTENTE %d : %s ]\n", u.pid, u.nome);
@@ -40,7 +39,7 @@ int main(int argc, char **argv)
     fgets(u.sintomas, sizeof(u.sintomas) - 1, stdin);
 
     // cria fifo cliente
-    int res = mkfifo(u.fifoName, 0666);
+    int res = mkfifo(u.fifoNome, 0666);
     if (res == -1)
     {
         perror("\nErro criar fifo");
@@ -59,7 +58,7 @@ int main(int argc, char **argv)
     res = write(fd_balcao, &u, sizeof(u));
     fprintf(stdout, " &d bytes de informação enviada ao balcao, aguarde... ", &res);
 
-    fd_cliente = open(u.fifoName, O_RDWR);
+    fd_cliente = open(u.fifoNome, O_RDWR);
     if (fd_cliente == -1)
     {
         perror("\nAbrir fifo balcao");
@@ -77,32 +76,21 @@ int main(int argc, char **argv)
 
     fprintf(stdout, "\n[UTENTE] %s", u.nome);
     fprintf(stdout, "\nEspecialidade:  %s", u.especialidade);
-    fprintf(stdout, "\nPrioridade:  %s", u.prioridade);
+    fprintf(stdout, "\nPrioridade:  %d", u.prioridade);
     fprintf(stdout, "\nAguarde atendimento médico....");
 
 /*
-
     do{
-
     // aguarda consulta... irá ser atendido pelo medico x com o pid y 
     
-
     // dialogo com o medico
-
     
     fflush(stdin);
     fgets(str,sizeof(str)-1, stdin );
-
     sendTo(pid,);
-
     }while(strcmp(str,"sair")!=0);
     // avisa balcao que irá sair 
-
-
-
-
     // termina consulta, termina prog cliente ???
-
     */
 
     close(fd_cliente);

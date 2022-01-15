@@ -13,23 +13,17 @@
 #include <sys/select.h>
 #include <pthread.h>
 
+
 #define FIFO_CLIENTE "fifoCliente%d"
 #define FIFO_MEDICO "fifoMedico%d"
 
 #define FIFO_BALCAO "fifoBalcao"
 
 
-typedef struct Mensagem
-{
- // ... 
-    char msg[1000];
-} msg ;
-
-
 typedef struct Utente {
     char nome[30];
     int pid;
-    char fifoName[30];
+    char fifoNome[30];
     char especialidade[10];
     char sintomas[100];
     int prioridade; 
@@ -42,9 +36,22 @@ typedef struct Especialista
     char nome[30];
     char especialidade[10];
     int pid;
+    char fifoNome[30];
     int emConsulta; 
 
 } especialista ;
+
+
+
+typedef struct Consulta
+{
+    utente u;
+    especialista esp;
+    char msg[1000];
+
+} consulta ;
+
+
 
 
 

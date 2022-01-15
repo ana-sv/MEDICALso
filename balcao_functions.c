@@ -55,8 +55,8 @@ void *recolheClientes(void *arg)
         addTOline(u);
 
 
-        fd_cliente = open(u.fifoName, O_RDWR);
-        if ((n = write(fd_cliente, &u, sizeof(utente)) == -1))
+        fd_cliente = open(u.fifoNome, O_RDWR);
+        if ((n = write(fd_cliente, &u, sizeof(u)) == -1))
             perror("ERRO ao ler do pipe cliente");
         
 
@@ -288,6 +288,3 @@ int begin()
 
     return 0;
 }
-
-
-
