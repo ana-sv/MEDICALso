@@ -65,7 +65,7 @@ int isAlreadyRunning()
     // se consegue detetar um pipe aberto, termina
     if (access(FIFO_BALCAO_CLIENTE, F_OK) != -1)
     {
-        fprintf(stderr, "BALCAO ALREADY RUNNING");
+        fprintf(stderr, "Ja' existe um balcao ativo");
         return 1;
     }
     return 0;
@@ -380,14 +380,14 @@ void running()
     }
 
     // abre pipe para leitura
-    fd_balcao_cliente = open(FIFO_BALCAO_CLIENTE, O_RDWR);
+    fd_balcao_cliente = open(FIFO_BALCAO_CLIENTE, O_RDWR );
     if (fd_balcao_cliente == -1)
     {
         perror("\nerro ao fifo do balcao");
         exit(1);
     }
 
-    fd_balcao_medico = open(FIFO_BALCAO_MEDICO, O_RDWR);
+    fd_balcao_medico = open(FIFO_BALCAO_MEDICO, O_RDWR | O_NONBLOCK);
     if (fd_balcao_medico == -1)
     {
         perror("\nAbrir fifo do  balcao auxiliar");

@@ -7,7 +7,6 @@ int fd_cliente, fd_balcao;
 int main(int argc, char **argv)
 {
 
-   
     especialista esp;
     utente u;
     int res;
@@ -60,6 +59,10 @@ int main(int argc, char **argv)
 
 
     sleep(20); // como nao tem mais, só para evitar que termine logo 
+
+    // recebe struct utente do balcao
+
+    // dialogo com um utente 
 
 
 

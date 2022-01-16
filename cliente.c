@@ -79,20 +79,15 @@ int main(int argc, char **argv)
     fprintf(stdout, "\nPrioridade:  %d", u.prioridade);
     fprintf(stdout, "\n\nAguarde atendimento médico....\n");
 
-      sleep(20); // como nao tem mais, só para evitar que termine logo 
-/*
-    do{
-    // aguarda consulta... irá ser atendido pelo medico x com o pid y 
+     sleep(20); // como nao tem mais, só para evitar que termine logo 
+
+
+    
+    // recebe struct  especialista do balcao
     
     // dialogo com o medico
+          
     
-    fflush(stdin);
-    fgets(str,sizeof(str)-1, stdin );
-    sendTo(pid,);
-    }while(strcmp(str,"sair")!=0);
-    // avisa balcao que irá sair 
-    // termina consulta, termina prog cliente ???
-    */
 
     close(fd_cliente);
     remove(u.fifoNome);
