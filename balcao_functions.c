@@ -3,11 +3,8 @@
 int maxclientes;
 int maxmedicos;
 
-int stopRunning = 0;
-
 // Comunicacao com classificador
 int fd_in[2], fd_out[2];
-
 
 //Comunicação com Clientes
 int fd_balcao_cliente;
