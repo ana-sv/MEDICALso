@@ -18,6 +18,7 @@
 #define FIFO_MEDICO "fifoMedico%d"
 
 #define FIFO_BALCAO "fifoBalcao"
+#define FIFO_BALCAO_AUX "fifoBalcaoAux"
 
 
 typedef struct Utente {
@@ -27,7 +28,7 @@ typedef struct Utente {
     char especialidade[10];
     char sintomas[100];
     int prioridade; 
-    int lugarFila;  // se 0 , está em consulta
+    int emConsulta;  // se 0 , está em consulta
 } utente;
 
 
@@ -65,7 +66,7 @@ int configClassificador();
 void environmentVariables();
 void showEnvironmentVariables();
 
-int isAlreadyRunning();
+void isAlreadyRunning();
 void shutdown();
 int begin(); 
 

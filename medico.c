@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     fprintf(stdout,"[ Bem-vindo Dr. %s ]\n", esp.nome);
 
     // cria fifo medico
-    int res = mkfifo(esp.fifoNome, 0666);
+    res = mkfifo(esp.fifoNome, 0666);
     if (res == -1)
     {
         perror("\nErro criar fifo");
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
 
     // abre fifo balcao
-    fd_balcao = open(FIFO_BALCAO, O_RDWR);
+    fd_balcao = open(FIFO_BALCAO_AUX, O_RDWR);
     if (fd_balcao == -1)
     {
         perror("\nAbrir fifo balcao");
