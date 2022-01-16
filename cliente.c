@@ -29,12 +29,12 @@ int main(int argc, char **argv)
     u.pid = getpid();
     u.prioridade = 0;
     strcpy(u.especialidade, "indefinida");
-    u.lugarFila = -1;                            // -1 ainda nao colocado , 0 para em consulta
+    u.emConsulta = -1;                            // -1 ainda nao colocado , 0 para em consulta
     sprintf(u.fifoNome, FIFO_CLIENTE, getpid()); // nome do fifo deste cliente
 
     //indica sintomas do utente
-    fprintf(stdout, "[ UTENTE %d : %s ]\n", u.pid, u.nome);
-    fprintf(stdout, "Indique os seus sintomas: ");
+    fprintf(stdout, "[ UTENTE %d : %s ]", u.pid, u.nome);
+    fprintf(stdout, "\nIndique os seus sintomas: ");
     fflush(stdin);
     fgets(u.sintomas, sizeof(u.sintomas) - 1, stdin);
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
     // envia nome, pid e sintomas do utente ao balcao
     res = write(fd_balcao, &u, sizeof(u));
-    fprintf(stdout, " &d bytes de informação enviada ao balcao, aguarde... ", &res);
+    fprintf(stdout, "\n-> %d bytes de informação enviada ao balcao, aguarde... ", res);
 
     fd_cliente = open(u.fifoNome, O_RDWR);
     if (fd_cliente == -1)
@@ -74,10 +74,10 @@ int main(int argc, char **argv)
     }
     u = aux;
 
-    fprintf(stdout, "\n[UTENTE] %s", u.nome);
+    fprintf(stdout, "\n\n[UTENTE] %s", u.nome);
     fprintf(stdout, "\nEspecialidade:  %s", u.especialidade);
     fprintf(stdout, "\nPrioridade:  %d", u.prioridade);
-    fprintf(stdout, "\nAguarde atendimento médico....");
+    fprintf(stdout, "\n\nAguarde atendimento médico....\n");
 
 /*
     do{
@@ -94,8 +94,8 @@ int main(int argc, char **argv)
     */
 
     close(fd_cliente);
-    unlink(u.fifoNome);
     remove(u.fifoNome);
+
 
     return (EXIT_SUCCESS);
 }
