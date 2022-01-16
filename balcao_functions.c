@@ -5,13 +5,14 @@ int maxmedicos;
 
 int stopRunning = 0;
 
-int fd_balcao;
-int fd_lixo;
+// int fd_lixo;
 
 // Comunicacao com classificador
 int fd_in[2], fd_out[2];
 
 //Comunicação com Clientes
+
+int fd_balcao;
 int fd_cliente;
 char fifoCliente[25];
 
@@ -122,7 +123,7 @@ void *recolheClientes(void *arg)
 
         printf("\n[CLIENTE] %s os sintomas: %s", u.nome, u.sintomas);
         u = classifica(u); // classifica retorna a struct cliente já preenchida com prioridade e especialidade
-        addCliente(u);
+       // addCliente(u);
 
 
         fd_cliente = open(u.fifoNome, O_RDWR | O_NONBLOCK );
@@ -288,15 +289,13 @@ void running()
 
 void shutdown()  ///// FALTA 
 {
-    fprintf(stdout, "O balcao vai encerrar... \n ");
+    fprintf(stdout, "\n O balcao vai encerrar... \n ");
 
     // encerra o classificador
     utente u;
-    strcpy(u.sintomas, "#fim");
+    strcpy(u.sintomas, "fim");
     classifica(u);
 
-    fflush(stdout);
-    fflush(stdin);
 
     // unlink pipes
     close(fd_balcao);
@@ -308,8 +307,10 @@ void shutdown()  ///// FALTA
 
     // envia sinal para todos os clientes encerrarem
 
+
     // envia sinal para todos os especialistas encerrarem
     exit(0);
+
 }
 
 
@@ -413,25 +414,16 @@ void environmentVariables()
     }
 }
 
-void isAlreadyRunning()
+
+int isAlreadyRunning()
 {
     // se consegue detetar um pipe aberto, termina
     if (access(FIFO_BALCAO, F_OK) != -1)
     {
         fprintf(stderr, "BALCAO ALREADY RUNNING");
-        shutdown();
+        return 1;
     }
-
-}
-
-int begin()
-{
-    isAlreadyRunning();
-    environmentVariables();
-    showEnvironmentVariables();
-
     return 0;
+
 }
-
-
 

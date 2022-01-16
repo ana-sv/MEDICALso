@@ -1,91 +1,100 @@
 #include "utils.h"
 
- #define NOMES 30
- #define SINTOMAS 100
-
 //Comunicação com o balcao, identificadores dos Named Pipes
-int fd_balcao;
+int fd_cliente, fd_balcao;
+
 
 int main(int argc, char **argv)
 {
 
-    especialista esp;
-    int res;
-
-    if(argc != 3){
+    if (argc != 2)
+    {
         perror("ERRO NA QT DE ARGUMENTOS");
         exit(EXIT_FAILURE);
     }
 
-
-      // se nao consegue detetar um pipe aberto, termina
+    // se nao consegue detetar um pipe aberto, termina
     if (access(FIFO_BALCAO, F_OK) == -1)
     {
         fprintf(stderr, "balcao indespinivel");
         exit(1);
     }
 
-    // info especialista 
-    strcpy(esp.nome,argv[1]);
-    strcpy(esp.especialidade,argv[2]); 
-    esp.pid = getpid();
-    sprintf(esp.fifoNome, FIFO_MEDICO, getpid()); // nome do fifo deste medico
-    esp.emConsulta=-1; // nao esta em consulta
+    utente u, aux;
+    char str[100];
+    int pid, verify;
 
+    // recolhe nome do utente
+    strcpy(u.nome, argv[1]);
+    u.pid = getpid();
+    u.prioridade = 0;
+    strcpy(u.especialidade, "indefinida");
+    u.lugarFila = -1;                            // -1 ainda nao colocado , 0 para em consulta
+    sprintf(u.fifoNome, FIFO_CLIENTE, getpid()); // nome do fifo deste cliente
 
-    fprintf(stdout,"[ Bem-vindo Dr. %s ]\n", esp.nome);
+    //indica sintomas do utente
+    fprintf(stdout, "[ UTENTE %d : %s ]\n", u.pid, u.nome);
+    fprintf(stdout, "Indique os seus sintomas: ");
+    fflush(stdin);
+    fgets(u.sintomas, sizeof(u.sintomas) - 1, stdin);
 
-    // cria fifo medico
-    res = mkfifo(esp.fifoNome, 0666);
+    // cria fifo cliente
+    int res = mkfifo(u.fifoNome, 0666);
     if (res == -1)
     {
         perror("\nErro criar fifo");
         exit(1);
     }
 
-
     // abre fifo balcao
-    fd_balcao = open(FIFO_BALCAO_AUX, O_RDWR);
+    fd_balcao = open(FIFO_BALCAO, O_RDWR);
     if (fd_balcao == -1)
     {
         perror("\nAbrir fifo balcao");
         exit(1);
     }
 
-    res = write(fd_balcao, &esp, sizeof(esp));
-    fprintf(stdout, " %d bytes de informação enviada ao balcao, aguarde... ", &res);
+    // envia nome, pid e sintomas do utente ao balcao
+    res = write(fd_balcao, &u, sizeof(u));
+    fprintf(stdout, " &d bytes de informação enviada ao balcao, aguarde... ", &res);
 
+    fd_cliente = open(u.fifoNome, O_RDWR);
+    if (fd_cliente == -1)
+    {
+        perror("\nAbrir fifo balcao");
+        exit(1);
+    }
 
+    // recebe struct utente preenchida 
+    verify = read(fd_cliente, &aux, sizeof(aux));
+    if (verify != sizeof(aux))
+    {
+        fprintf(stderr, "\nERRO NA LEITURA");
+        exit(1);
+    }
+    u = aux;
 
-    // sinal de alarme a cada 10 segundos , sinais alarm(10); ??
-    /*
+    fprintf(stdout, "\n[UTENTE] %s", u.nome);
+    fprintf(stdout, "\nEspecialidade:  %s", u.especialidade);
+    fprintf(stdout, "\nPrioridade:  %d", u.prioridade);
+    fprintf(stdout, "\nAguarde atendimento médico....");
+
+/*
     do{
-        fprintf(stdout," Aguarde a sua próxima consulta.... ");
-        
-        // com um named pipe bloqueantes fica à espera 
-        // de receber do balcao nomeUtente, pidUtente, sintomas;
-        
-        fprintf(stdout,"Colocado em consulta de %s : \n", especialidade );
-        fprintf(stdout,"Utente: %s [%d]\n Sintomas: %s\n", nomeUtente , pidUtente, sintomas);        
-        configPipeUtente();
-
-        do{
-        // dialogo com o paciente
-        // named pipe sem bloqueante
-        // o medico pode enviar duas perguntas seguidas sem esperar uma resposta
-
-        
-
-        }while(strcmp(str,"adeus")!=0);
-        // avisa balcao que terminou a consulta
-
-
-
-
+    // aguarda consulta... irá ser atendido pelo medico x com o pid y 
+    
+    // dialogo com o medico
+    
+    fflush(stdin);
+    fgets(str,sizeof(str)-1, stdin );
+    sendTo(pid,);
     }while(strcmp(str,"sair")!=0);
-    // avisa o balcao que irá sair 
+    // avisa balcao que irá sair 
+    // termina consulta, termina prog cliente ???
     */
 
+    close(fd_cliente);
+    unlink(u.especialidade);
 
     return (EXIT_SUCCESS);
 }

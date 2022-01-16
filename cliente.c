@@ -94,7 +94,8 @@ int main(int argc, char **argv)
     */
 
     close(fd_cliente);
-    unlink(u.especialidade);
+    unlink(u.fifoNome);
+    remove(u.fifoNome);
 
     return (EXIT_SUCCESS);
 }

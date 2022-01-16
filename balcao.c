@@ -1,16 +1,18 @@
+
+
 #include "utils.h"
 
 int main(int argc, char **argv)
 {
 
-    if (begin() == 1)
-    {
-        fprintf(stderr, "BEGIN FUNCTION ERROR");
-        return 0;
-    }
+   if( isAlreadyRunning() != 1 || configClassificador() == 1 ){
 
-    
-   running();
+    environmentVariables();
+    showEnvironmentVariables();
+    running();
 
-    return (EXIT_SUCCESS);
+   }
+
+    shutdown(); 
+
 }

@@ -56,8 +56,6 @@ typedef struct Consulta
 
 
 
-
-
 // Funções Balcao
 void running();
 utente classifica();
@@ -66,10 +64,18 @@ int configClassificador();
 void environmentVariables();
 void showEnvironmentVariables();
 
-void isAlreadyRunning();
+int isAlreadyRunning();
 void shutdown();
-int begin(); 
 
+
+void *recolheClientes(void *arg);
+void *recolheMedicos(void *arg);
+void shutdown();
+
+void printListaEspera();
+void printListaMedicos();
+void addCliente(utente u);
+void addMedico(especialista esp);
 
 
 // Funções Medico 
