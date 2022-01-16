@@ -17,9 +17,10 @@
 #define FIFO_CLIENTE "fifoCliente%d"
 #define FIFO_MEDICO "fifoMedico%d"
 
-#define FIFO_BALCAO "fifoBalcao"
-#define FIFO_BALCAO_AUX "fifoBalcaoAux"
+#define FIFO_BALCAO_CLIENTE "fifoBalcaoCliente"
+#define FIFO_BALCAO_MEDICO "fifoBalcaoMedico"
 
+#define N_THREADS 3 
 
 typedef struct Utente {
     char nome[30];
@@ -35,7 +36,7 @@ typedef struct Utente {
 typedef struct Especialista
 {
     char nome[30];
-    char especialidade[10];
+    char especialidade[30];
     int pid;
     char fifoNome[30];
     int emConsulta; 
@@ -57,31 +58,27 @@ typedef struct Consulta
 
 
 // Funções Balcao
-void running();
-utente classifica();
-int configClassificador(); 
 
 void environmentVariables();
 void showEnvironmentVariables();
 
 int isAlreadyRunning();
-void shutdown();
 
-
-void *recolheClientes(void *arg);
-void *recolheMedicos(void *arg);
-void shutdown();
+int configClassificador(); 
+utente classifica();
 
 void printListaEspera();
 void printListaMedicos();
+
+void deleteUtente( utente ut);
+void deleteMedico(especialista esp);
 void addCliente(utente u);
 void addMedico(especialista esp);
 
+void *recolheClientes(void *arg);
+void *recolheMedicos(void *arg);
 
-// Funções Medico 
+void funcaoSinalC();
 
-
-
-
-
-// Funções Cliente
+void running();
+void shutdown();

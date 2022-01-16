@@ -5,32 +5,28 @@ int maxmedicos;
 
 int stopRunning = 0;
 
-// int fd_lixo;
-
 // Comunicacao com classificador
 int fd_in[2], fd_out[2];
 
-//Comunicação com Clientes
 
-int fd_balcao;
+//Comunicação com Clientes
+int fd_balcao_cliente;
 int fd_cliente;
 char fifoCliente[25];
 
 //Comunicao com Medicos
 int fd_medico;
 char fifoMedico[25];
-int fd_balcao_aux;
-
+int fd_balcao_medico;
 
 utente listaEspera[50];
 especialista listaMedicos[50];
 
-
 typedef struct dados_pipes
 {
-    char nomePipe[25];
-    int fd;
+    pthread_t id;
     int cancel;
+
 } TDados;
 
 void showEnvironmentVariables()
@@ -67,7 +63,7 @@ void environmentVariables()
 int isAlreadyRunning()
 {
     // se consegue detetar um pipe aberto, termina
-    if (access(FIFO_BALCAO, F_OK) != -1)
+    if (access(FIFO_BALCAO_CLIENTE, F_OK) != -1)
     {
         fprintf(stderr, "BALCAO ALREADY RUNNING");
         return 1;
@@ -143,6 +139,22 @@ utente classifica(utente u)
     return u;
 }
 
+void printListaUtentes()
+{
+
+    fprintf(stdout, "\n----- Lista de Utentes -----");
+
+    for (int i = 0; i < maxclientes; i++)
+    {
+        if (listaEspera[i].pid != 0)
+        {
+            fprintf(stdout, "\n[ Utente %d ] %s", listaEspera[i].pid, listaEspera[i].nome);
+            fprintf(stdout, "\n- Especialidade: %s ", listaEspera[i].especialidade);
+            fprintf(stdout, "\n- Prioridade: %d", listaEspera[i].prioridade);
+        }
+    }
+}
+
 void printListaEspera()
 {
 
@@ -150,8 +162,8 @@ void printListaEspera()
 
     for (int i = 0; i < maxclientes; i++)
     {
-        if (listaEspera[i].pid != 0)
-        {
+        if (listaEspera[i].pid != 0 && listaEspera[i].emConsulta == 1)
+        { // 0 se está em consulta, 1 se não está. (1) porque queremos apenas aqueles que ainda estao à espera da sua vez
             fprintf(stdout, "\n[ Utente %d ] %s", listaEspera[i].pid, listaEspera[i].nome);
             fprintf(stdout, "\n- Especialidade: %s ", listaEspera[i].especialidade);
             fprintf(stdout, "\n- Prioridade: %d", listaEspera[i].prioridade);
@@ -174,6 +186,50 @@ void printListaMedicos()
     }
 }
 
+
+void deleteUtente(utente u ){
+
+    int i=0, pos=-1; 
+
+    for(i=0; i<maxclientes; i++){
+        if( strcmp(u.nome , listaEspera[i].nome) == 0  ){
+            pos = i;    
+        }
+    }
+
+    if(pos==-1){
+        printf("\nUtente nao encontrado!");
+    }
+
+    for(i=pos; i<maxclientes; i++)
+        listaEspera[i]=listaEspera[i+1];
+
+        // falta informar o utente
+}
+
+
+
+void deleteMedico(especialista esp){
+
+    int i=0, pos=-1; 
+
+    for(i=0; i<maxmedicos; i++){
+        if( strcmp(esp.nome , listaMedicos[i].nome) == 0  ){
+            pos = i;    
+        }
+    }
+
+    if(pos==-1){
+        printf("\nMedico nao encontrado!");
+    }
+
+    for(i=pos; i<maxmedicos; i++)
+        listaMedicos[i]=listaMedicos[i+1];
+
+        // falta informar o especialista 
+}
+
+
 void addCliente(utente u)
 {
     int i, j, aux;
@@ -182,13 +238,13 @@ void addCliente(utente u)
 
     for (int i = 0; i < maxclientes; i++)
     {
-        
-        if(listaEspera[i].pid == 0){
+
+        if (listaEspera[i].pid == 0)
+        {
             listaEspera[i] = u;
             break;
         }
     }
-    
 
     if (i == maxclientes)
     {
@@ -198,12 +254,11 @@ void addCliente(utente u)
     // organiza-a por prioridade
     //3 tem maior prioridade, 1 tem a menor
 
-
-    for(i=0; i<maxclientes; i++)
+    for (i = 0; i < maxclientes; i++)
     {
-        for(j=i+1; j<maxclientes; j++)
+        for (j = i + 1; j < maxclientes; j++)
         {
-            if(listaEspera[i].prioridade < listaEspera[j].prioridade)
+            if (listaEspera[i].prioridade < listaEspera[j].prioridade)
             {
                 aux = listaEspera[i].prioridade;
                 listaEspera[i].prioridade = listaEspera[j].prioridade;
@@ -211,18 +266,21 @@ void addCliente(utente u)
             }
         }
     }
-
-
-
 }
 
 void addMedico(especialista esp)
 {
     int i;
-    for (i = 0; i < maxmedicos, listaMedicos[i].pid == 0; i++)
+    for (i = 0; i < maxmedicos; i++)
     {
-        listaMedicos[i] = esp;
+
+        if (listaMedicos[i].pid == 0)
+        {
+            listaMedicos[i] = esp;
+            break;
+        }
     }
+
     if (i == maxmedicos)
     {
         printf("\nAtencao ! lista de medicos cheia!");
@@ -239,7 +297,7 @@ void *recolheClientes(void *arg)
 
     while (!as->cancel)
     {
-        if ((n = read(fd_balcao, &u, sizeof(utente)) == -1))
+        if ((n = read(fd_balcao_cliente, &u, sizeof(utente)) == -1))
             perror("ERRO ao ler do pipe cliente");
 
         printf("\n[CLIENTE] %s  \n[sintomas] %s", u.nome, u.sintomas);
@@ -264,47 +322,35 @@ void *recolheMedicos(void *arg)
 
     while (!as->cancel)
     {
-        n = read(fd_balcao_aux, &esp, sizeof(especialista));
+        n = read(fd_balcao_medico, &esp, sizeof(especialista));
 
         if (n > 0)
         {
 
             printf("\n[MEDICO] %s especialidade: %s", esp.nome, esp.especialidade);
             addMedico(esp);
+
         }
     }
 
     return NULL;
 }
 
-void shutdown()
+void funcaoSinalC()
 {
-    fprintf(stdout, "\n O balcao vai encerrar... \n ");
-
-    unlink(FIFO_BALCAO);
-    unlink(FIFO_BALCAO_AUX);
-    remove(FIFO_BALCAO_AUX);
-    remove(FIFO_BALCAO);
-    exit(0);
-
-    // encerra o classificador
-    // tem que se trocar para cima mas está a parar aqui e não deixa fechar
-    utente u;
-    strcpy(u.sintomas, "#fim");
-    classifica(u);
-
-    // envia sinal para todos os clientes encerrarem
-
-    // envia sinal para todos os especialistas encerrarem
+    printf("\n\nCtrl^C detectado! Adeus!");
+    shutdown();
 }
 
 void running()
 {
 
-    int res1, res2;
+    int res1, res2, i;
+
+    signal(SIGINT, funcaoSinalC);
 
     // para as threads
-    pthread_t th[2];
+    pthread_t th[N_THREADS];
     TDados tdadosClientes, tdadosMedicos;
 
     if (configClassificador() == 1)
@@ -314,19 +360,19 @@ void running()
 
     //inicializar arrays;
     // enquanto o pid for 0 , nao interessa
-    for (int i = 0; i < maxclientes; i++)
+    for (i = 0; i < maxclientes; i++)
     {
         listaEspera[i].pid = 0;
     }
 
-    for (int i = 0; i < maxmedicos; i++)
+    for (i = 0; i < maxmedicos; i++)
     {
         listaMedicos[i].pid = 0;
     }
 
     // cria pipe balcao
-    res1 = mkfifo(FIFO_BALCAO, 0666);
-    res2 = mkfifo(FIFO_BALCAO_AUX, 0666);
+    res1 = mkfifo(FIFO_BALCAO_CLIENTE, 0666);
+    res2 = mkfifo(FIFO_BALCAO_MEDICO, 0666);
     if (res1 == -1 || res2 == -1)
     {
         perror("\nerro ao criar fifos do balcao");
@@ -334,15 +380,15 @@ void running()
     }
 
     // abre pipe para leitura
-    fd_balcao = open(FIFO_BALCAO, O_RDWR);
-    if (fd_balcao == -1)
+    fd_balcao_cliente = open(FIFO_BALCAO_CLIENTE, O_RDWR);
+    if (fd_balcao_cliente == -1)
     {
         perror("\nerro ao fifo do balcao");
         exit(1);
     }
 
-    fd_balcao_aux = open(FIFO_BALCAO_AUX, O_RDWR);
-    if (fd_balcao_aux == -1)
+    fd_balcao_medico = open(FIFO_BALCAO_MEDICO, O_RDWR);
+    if (fd_balcao_medico == -1)
     {
         perror("\nAbrir fifo do  balcao auxiliar");
         exit(1);
@@ -350,29 +396,26 @@ void running()
 
     //lança thread que espera clientes
     tdadosClientes.cancel = 0;
-    pthread_create(&th[0], NULL, &recolheClientes, &tdadosClientes);
+    pthread_create(&th[0], NULL, recolheClientes, &tdadosClientes);
 
     //lança thread que espera especialistas
     tdadosMedicos.cancel = 0;
-    pthread_create(&th[1], NULL, &recolheMedicos, &tdadosMedicos);
+    pthread_create(&th[1], NULL, recolheMedicos, &tdadosMedicos);
 
-
-    // Termina de recolher cliente e medicos , cancela as threads
-    // tdadosClientes.cancel = 1; //pede à thread para sair
-    // pthread_join(th[0],NULL); // espera que a thread acabe
-
+    //lança thread que faz pares para consulta??
+    /// EM FALTA
 
     char comando[30]; //fica com tudo o que escrevo
     char *cmd[3];     // fica com tudo divide, 2 palavras + '\0'
-    int i;
 
     fprintf(stdout, "\n>> Insira um comando: ");
 
     do
     {
 
-        fgets(comando, 30, stdin); //mete tudo o que escreveu em comando, PROBLEMA! com "\n" e " "
+        printf("\n");
 
+        fgets(comando, 30, stdin);           // mete tudo o que escreveu em comando, PROBLEMA! com "\n" e " "
         comando[strlen(comando) - 1] = '\0'; // mete \0 no fim de tudo
 
         i = 0;
@@ -386,7 +429,7 @@ void running()
 
         if (strcmp(cmd[0], "utentes") == 0)
         {
-            printListaEspera();
+            printListaUtentes();
         }
         if (strcmp(cmd[0], "especialistas") == 0)
         {
@@ -394,21 +437,65 @@ void running()
         }
         if (strcmp(cmd[0], "delut") == 0)
         {
-            printf("\nDELUT %s", cmd[1]);
             // remover um utente em espera e informando-o disso
+            utente ut;
+            strcpy(ut.nome,cmd[1]);
+            deleteUtente(ut);
         }
         if (strcmp(cmd[0], "delesp") == 0)
         {
             // remover um especialista que nao esteja em consulta e informando-o disso
-            printf("Não implementado");
+            especialista e;
+            strcpy(e.nome,cmd[1]);
+            deleteMedico(e);
         }
         if (strcmp(cmd[0], "freq") == 0)
         {
             // apresenta as filas de espera, atualizado de N em N segundos
-            printf("Não implementado");
+            printListaEspera(); // aqui a lista já está sempre organizada, pois é organizada sempre que aparece um novo utente
         }
 
     } while (strcmp(cmd[0], "encerra") != 0);
 
+    // parar as threads , pode não estar da melhor forma trocar quando der..
+    pthread_cancel(th[0]);
+    pthread_cancel(th[1]);
+
     shutdown();
+}
+
+
+
+void shutdown()
+{
+
+    printf("\n O balcao vai encerrar... \n ");
+
+    unlink(FIFO_BALCAO_CLIENTE);
+    unlink(FIFO_BALCAO_MEDICO);
+    remove(FIFO_BALCAO_MEDICO);
+    remove(FIFO_BALCAO_CLIENTE);
+   
+    int i;
+
+    // envia sinal para todos os clientes encerrarem
+    for (i = 0; i < maxclientes; i++)
+    {
+        kill(listaEspera[i].pid, SIGKILL); // nao está feito da melhor maneira....
+    }
+
+    // envia sinal para todos os especialistas encerrarem
+    for (i = 0; i < maxmedicos; i++)
+    {
+        kill(listaMedicos[i].pid, SIGKILL);
+    }
+
+  
+    exit(0);
+
+    // encerra o classificador
+    // sei que nao chega aqui, tem que se trocar para cima mas está a parar aqui e não deixa fechar o prog
+    utente u;
+    strcpy(u.sintomas, "#fim");
+    classifica(u);
 }

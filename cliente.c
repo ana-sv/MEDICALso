@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     }
 
     // se nao consegue detetar um pipe aberto, termina
-    if (access(FIFO_BALCAO, F_OK) == -1)
+    if (access(FIFO_BALCAO_CLIENTE, F_OK) == -1)
     {
         fprintf(stderr, "balcao indespinivel");
         exit(1);
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     }
 
     // abre fifo balcao
-    fd_balcao = open(FIFO_BALCAO, O_RDWR);
+    fd_balcao = open(FIFO_BALCAO_CLIENTE, O_RDWR);
     if (fd_balcao == -1)
     {
         perror("\nAbrir fifo balcao");
@@ -79,6 +79,7 @@ int main(int argc, char **argv)
     fprintf(stdout, "\nPrioridade:  %d", u.prioridade);
     fprintf(stdout, "\n\nAguarde atendimento médico....\n");
 
+      sleep(20); // como nao tem mais, só para evitar que termine logo 
 /*
     do{
     // aguarda consulta... irá ser atendido pelo medico x com o pid y 
